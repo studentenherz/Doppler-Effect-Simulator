@@ -1,7 +1,10 @@
-from doppler import doppler
-from util import convert_to_float32
-from scipy.io.wavfile import read, write
+import numpy as np
 import argparse
+from scipy.io.wavfile import write
+
+from util import digest_audio
+from doppler import doppler
+from gui import GUI
 
 VERSION = 1.0
 
@@ -22,20 +25,23 @@ def main():
 
 	if not args.fin:
 		parser.error('Input file is mandatory')
-	samplerate, data = read(args.fin)
 
-	N_channels = 1 if len(data.shape) == 1 else data.shape[1]
-	if N_channels > 1:
-		data = (convert_to_float32(data[:,0]) + convert_to_float32(data[:,1])) / 2
-	else:
-		data = convert_to_float32(data[:,0])
+	receptor = (args.x0, args.y0)
 
-	new_interp = doppler(data, samplerate, lambda t : (100 - 30 * t, 10))
+	samplerate, data = digest_audio(args.fin)
+
+	omega = args.v / args.R
+	circle = lambda t : (args.R * np.cos(omega * t), args.R * np.sin(omega * t))
+
+	def calculate(receptor = (0., 0.)):
+		return doppler(data, samplerate, circle, receptor)
 
 	if args.interactive:
-		print("Interactive mode")
+		gui = GUI(circle, 2 * np.pi / omega, calculate, receptor)
+		gui.show()
 	else:
-		write(args.fout, samplerate, new_interp)
+		_, (_, new_wave) = calculate(receptor)
+		write(args.fout, samplerate, new_wave)
 
 if __name__ == '__main__':
 	main()
