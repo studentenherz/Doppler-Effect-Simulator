@@ -1,7 +1,14 @@
 import numpy as np
 from scipy.interpolate import interp1d
 
-def doppler(data : np.ndarray, samplerate : int, source : callable, x0 = 0.0, y0 = 0.0, c = 300, invsqr = True) -> np.ndarray :
+def doppler(
+		data : np.ndarray,
+		samplerate : int,
+		source : callable([[float], tuple[float, float]]),
+		receptor : tuple[float, float] = (0., 0.),
+		c : float = 300,
+		invsqr : bool = True
+	) -> tuple[tuple[np.ndarray, np.ndarray], tuple[np.ndarray, np.ndarray]]:
 	'''
 		Transforms data representing a sound into what will be heard from coming from the source in the receptor.
 
@@ -32,7 +39,8 @@ def doppler(data : np.ndarray, samplerate : int, source : callable, x0 = 0.0, y0
 	t = np.arange(0, N_samples) / samplerate
 
 	def distance(t):
-		x1, y1 = source(t) 
+		x0, y0 = receptor
+		x1, y1 = source(t)
 
 		return np.sqrt((x1 - x0)**2 + (y1 - y0)**2)
 
@@ -58,4 +66,4 @@ def doppler(data : np.ndarray, samplerate : int, source : callable, x0 = 0.0, y0
 	# interpolate data to fixed rate samples
 	newdata = f(rec_t_fixed_rate)
 
-	return newdata
+	return (t, d), (rec_t_fixed_rate, newdata)
