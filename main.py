@@ -40,7 +40,7 @@ def main():
 		gui = GUI(circle, 2 * np.pi / omega, calculate, receptor)
 		gui.show()
 	else:
-		_, (_, new_wave) = calculate(receptor)
+		_, new_wave = calculate(receptor)
 		write(args.fout, samplerate, new_wave)
 
 if __name__ == '__main__':

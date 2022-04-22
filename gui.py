@@ -25,7 +25,7 @@ class GUI:
 		self._calculate = calculate
 		self._receptor = receptor
 
-		(self._t, self._distance), (self._reception_t, self._wave) = self._calculate(self._receptor)
+		self._reception_t, self._wave = self._calculate(self._receptor)
 
 		# Left panel, animation of the experiment
 		self._ax1 = plt.subplot(121)
@@ -42,7 +42,7 @@ class GUI:
 
 		# Source marker
 		sx0, sy0 = self._source(0)
-		self._source_line, = self._ax1.plot(sx0, sy0, 'o')
+		self._source_line, = self._ax1.plot(sx0, sy0, 'o', animated=True)
 
 		self._receptor_line, = self._ax1.plot(receptor[0], receptor[1], 'og')
 
@@ -52,10 +52,13 @@ class GUI:
 		self._ax2.xaxis.tick_top()
 		self._ax2.xaxis.set_label_position('top')
 		self._ax2.set_ylabel('distance (m)')
+		self._ax2.set_xlim([0, 6])
 		# self._ax2.yaxis.tick_right()
 		# self._ax2.yaxis.set_label_position('right')
  
-		self._distance_line, = self._ax2.plot(self._t, self._distance)
+		self._t = []
+		self._distance = []
+		self._distance_line, = self._ax2.plot([], [])
 
 		# Lower right panel, sound wave
 		self._ax3 = plt.subplot(224)
@@ -68,9 +71,24 @@ class GUI:
 		self._time = 0
 
 		def update_lines(i):
-			self._time = i * interval / 1000
+			self._time += interval / 1000
+			x0, y0 = self._receptor
+			x1, y1 = self._source(self._time)
+
+			self._t.append(self._time)
+			self._distance.append(np.sqrt((x1 - x0)**2 + (y1 - y0)**2))
+			self._distance_line.set_data(self._t, self._distance)
+
+			if self._t[-1] > self._ax2.get_xlim()[1]:
+				self._t = self._t[1:]
+				self._distance = self._distance[1:]
+				self._ax2.set_xlim([self._t[0], self._t[-1]])
+
+			self._ax2.relim()
+			self._ax2.autoscale_view(scalex=False)
+
 			self._source_line.set_data(*self._source(self._time))
-			return [self._source_line, self._receptor_line]
+			return [self._source_line, self._receptor_line, self._distance_line]
 
 		self._anim = 	FuncAnimation(self._fig, update_lines, interval=interval, blit = True)
 		self._playing = True
@@ -84,6 +102,24 @@ class GUI:
 				self._receptor_line.set_data(*self._receptor)
 				plt.draw()
 
+		self._mouse_scrolling = False
+		def onscroll(event):
+			if not self._mouse_scrolling:
+				self._cached_bg = self._fig.canvas.copy_from_bbox(self._fig.bbox)
+				self._source_line.set(alpha=0.5)
+				self._mouse_scrolling = True
+
+			self._anim.pause()
+			self._playing = False
+
+			self._fig.canvas.restore_region(self._cached_bg)
+			self._time += event.step * interval / 1000
+
+			self._source_line.set_data(*self._source(self._time))
+			self._ax1.draw_artist(self._source_line)
+			self._fig.canvas.blit(self._fig.bbox)
+			self._fig.canvas.flush_events()
+
 
 		def onkeypress(event):
 			# Toggle play/pause with spacebar
@@ -94,9 +130,11 @@ class GUI:
 				else:
 					self._anim.resume()
 					self._playing = True
+					self._mouse_scrolling = False
+					self._source_line.set(alpha=1)
 			# Hit Enter to play the sound from current position
 			if event.key == 'enter':
-				(self._t, self._distance), (self._reception_t, self._wave) = self._calculate(self._receptor)
+				self._reception_t, self._wave = self._calculate(self._receptor)
 				self._distance_line.set_data(self._t, self._distance)
 				self._wave_line.set_data(self._reception_t, self._wave)
 				self._ax2.relim()
@@ -104,9 +142,12 @@ class GUI:
 				plt.draw()
 				self._anim.resume()
 				self._playing = True
-			
+				self._mouse_scrolling = False
+				self._source_line.set(alpha=1)
+		
 		
 		self._fig.canvas.mpl_connect('button_press_event', onclick)
+		self._fig.canvas.mpl_connect('scroll_event', onscroll)
 		self._fig.canvas.mpl_connect('key_press_event', onkeypress)
 
 	def show(self):

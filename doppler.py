@@ -8,7 +8,7 @@ def doppler(
 		receptor : tuple[float, float] = (0., 0.),
 		c : float = 300,
 		invsqr : bool = True
-	) -> tuple[tuple[np.ndarray, np.ndarray], tuple[np.ndarray, np.ndarray]]:
+	) -> tuple[np.ndarray, np.ndarray]:
 	'''
 		Transforms data representing a sound into what will be heard from coming from the source in the receptor.
 
@@ -66,4 +66,4 @@ def doppler(
 	# interpolate data to fixed rate samples
 	newdata = f(rec_t_fixed_rate)
 
-	return (t, d), (rec_t_fixed_rate, newdata)
+	return rec_t_fixed_rate, newdata
