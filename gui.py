@@ -52,8 +52,8 @@ class GUI:
 		self._ax2.xaxis.tick_top()
 		self._ax2.xaxis.set_label_position('top')
 		self._ax2.set_ylabel('distance (m)')
-		self._ax2.yaxis.tick_right()
-		self._ax2.yaxis.set_label_position('right')
+		# self._ax2.yaxis.tick_right()
+		# self._ax2.yaxis.set_label_position('right')
  
 		self._distance_line, = self._ax2.plot(self._t, self._distance)
 
@@ -65,22 +65,49 @@ class GUI:
 		self._wave_line, = self._ax3.plot(self._reception_t, self._wave)
 
 		interval = 20 # in ms
+		self._time = 0
 
 		def update_lines(i):
-			self._source_line.set_data(*self._source(i * interval / 1000))
+			self._time = i * interval / 1000
+			self._source_line.set_data(*self._source(self._time))
 			return [self._source_line, self._receptor_line]
 
 		self._anim = 	FuncAnimation(self._fig, update_lines, interval=interval, blit = True)
+		self._playing = True
 
 		def onclick(event):
-			self._receptor = (event.xdata, event.ydata)
-			self._receptor_line.set_data(*self._receptor)
-			(self._t, self._distance), (self._reception_t, self._wave) = self._calculate(self._receptor)
-			self._distance_line.set_data(self._t, self._distance)
-			self._wave_line.set_data(self._reception_t, self._wave)
-			plt.draw()
+			if event.button == 1:
+				self._anim.pause()
+				self._playing = False
+
+				self._receptor = (event.xdata, event.ydata)
+				self._receptor_line.set_data(*self._receptor)
+				plt.draw()
+
+
+		def onkeypress(event):
+			# Toggle play/pause with spacebar
+			if event.key == ' ':
+				if self._playing:
+					self._anim.pause()
+					self._playing = False
+				else:
+					self._anim.resume()
+					self._playing = True
+			# Hit Enter to play the sound from current position
+			if event.key == 'enter':
+				(self._t, self._distance), (self._reception_t, self._wave) = self._calculate(self._receptor)
+				self._distance_line.set_data(self._t, self._distance)
+				self._wave_line.set_data(self._reception_t, self._wave)
+				self._ax2.relim()
+				self._ax2.autoscale_view()
+				plt.draw()
+				self._anim.resume()
+				self._playing = True
+			
 		
 		self._fig.canvas.mpl_connect('button_press_event', onclick)
+		self._fig.canvas.mpl_connect('key_press_event', onkeypress)
 
 	def show(self):
 		plt.show()
