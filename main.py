@@ -13,7 +13,8 @@ def main():
 
 	parser.add_argument('-a', '--input', dest='fin', type=str, help='Input audio file in WAV format')
 	parser.add_argument('-R', '--radius', action='store', dest='R', type=float, default=100, help='Radius of source\'s trajectory in meters (default = 100)')
-	parser.add_argument('-v', '--velocity', action='store', dest='v', type=float, default=30, help='Speed of the source in peters per second (default = 30)')
+	parser.add_argument('-v', '--velocity', action='store', dest='v', type=float, default=30, help='Speed of the source in meters per second (default = 30)')
+	parser.add_argument('-c', '--sound-speed', action='store', dest='c', type=float, default=300, help='Speed of the sound in meters per second (default = 300)')
 	parser.add_argument('--x0', action='store', dest='x0', type=float, default=0, help='Initial x position of receptor in meters (default = 0)')
 	parser.add_argument('--y0', action='store', dest='y0', type=float, default=0, help='Initial y position of receptor in meters (default = 0)')
 	parser.add_argument('-o', '--output', action='store', dest='fout', type=str, default='doppler.wav', help='Output file')
@@ -33,8 +34,8 @@ def main():
 	omega = args.v / args.R
 	circle = lambda t : (args.R * np.cos(omega * t), args.R * np.sin(omega * t))
 
-	def calculate(receptor = (0., 0.)):
-		return doppler(data, samplerate, circle, receptor)
+	def calculate(receptor = (0., 0.), t0 = 0):
+		return doppler(data, samplerate, circle, t0, receptor, args.c)
 
 	if args.interactive:
 		gui = GUI(circle, 2 * np.pi / omega, calculate, receptor)
