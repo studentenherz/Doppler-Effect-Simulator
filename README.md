@@ -52,3 +52,4 @@ Give the flag `-i`(or `--interactive`) in order to run in interactive mode; here
 - Right click (or `spacebar`): toggles play/pause the animation
 - Middle click (or `Enter`): starts the animation as if the sound was emitted in the current position
 - Scroll wheel: changes the position of the source
+- Left double-click: equivalent to Left click + Middle click
