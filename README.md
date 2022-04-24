@@ -16,6 +16,8 @@ Depending on your system you might have to install additional graphic backend fo
 
 ### Usage
 
+The directory `data` contains some audio files that can be used to test the program.
+
 ```
 usage: main.py [-h] [-a FIN] [-R R] [-v V] [-c C] [--x0 X0] [--y0 Y0] [-o FOUT] [-i] [-V]
 
