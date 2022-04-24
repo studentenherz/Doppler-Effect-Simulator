@@ -5,6 +5,7 @@ def doppler(
 		data : np.ndarray,
 		samplerate : int,
 		source : callable([[float], tuple[float, float]]),
+		t0 : float,
 		receptor : tuple[float, float] = (0., 0.),
 		c : float = 300,
 		invsqr : bool = True
@@ -20,17 +21,19 @@ def doppler(
 			Sample rate of the sound
 		source: callable
 			A callable that returns the position (x, y) of the source when evaluated on the time t. (x, y) in meters and t in seconds.
-		x0 : float
-			x position of receptor
-		y0 : float
-			y position of receptor
+		t0 : float
+			Initial time
+		receptor : tuple[float, float]
+			Position of the receptor (default (0., 0.))
 		c : float
-			Speed of the sound on the medium
+			Speed of the sound on the medium (default (300))
 		invsqrt: bool
-			True if the sound should take into account the inverse square relation between sound intensity and distance (because of energy conservation)
+			True if the sound should take into account the inverse square relation between sound intensity and distance (because of energy conservation) (default True)
 
 		Returns
 		-------
+		rec_time: np.ndarray
+			Time array of the sound
 		newdata: np.ndarray
 			Sound data after Doppler effect is applied
 	'''
@@ -40,7 +43,7 @@ def doppler(
 
 	def distance(t):
 		x0, y0 = receptor
-		x1, y1 = source(t)
+		x1, y1 = source(t0 + t)
 
 		return np.sqrt((x1 - x0)**2 + (y1 - y0)**2)
 
