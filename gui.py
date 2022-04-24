@@ -38,13 +38,15 @@ class GUI:
 		t = np.linspace(0, period, 100)
 		vec_source = np.vectorize(source)
 		s = vec_source(t)
-		self._ax1.plot(s[0], s[1], '--')
+		self._ax1.plot(s[0], s[1], '--', c='#96939B')
 
 		# Source marker
 		sx0, sy0 = self._source(0)
-		self._source_line, = self._ax1.plot(sx0, sy0, 'o', animated=True)
+		self._source_line, = self._ax1.plot(sx0, sy0, 'o', c='#564256', animated=True, markersize=10, markeredgecolor='None')
+		self._initial_pos_line, = self._ax1.plot(sx0, sy0, 'o', c='#564256', alpha=0.5, markersize=10, markeredgecolor='None')
 
-		self._receptor_line, = self._ax1.plot(receptor[0], receptor[1], 'og')
+		self._receptor_line, = self._ax1.plot(receptor[0], receptor[1], 'X', c='#FC814A', markersize=14, markeredgecolor='None')
+		self._next_receptor_line, = self._ax1.plot([], [], 'X', c='#FC814A', markersize=14 , markeredgecolor='None', alpha=0.5)
 
 		# Upper right panel, distance
 		self._ax2 = plt.subplot(222)
@@ -57,7 +59,7 @@ class GUI:
  
 		self._t = []
 		self._distance = []
-		self._distance_line, = self._ax2.plot([], [])
+		self._distance_line, = self._ax2.plot([], [], c='#96939B')
 
 		# Lower right panel, sound wave
 		self._ax3 = plt.subplot(224)
@@ -65,12 +67,13 @@ class GUI:
 		self._ax3.set_ylabel('amplitude (relative units)')
 		self._ax3.set_ylim([-1, 1])
 
-		self._wave_line, = self._ax3.plot([], [])
+		self._wave_line, = self._ax3.plot([], [], c='#564256', lw=1)
 
 		self._interval = 20 # in ms
 		self._time = 0
 		self._t0_datetime = datetime.now()
 		self._phase = 0
+		self._initial_pos_phase = 0
 
 		def d(t):
 			x0, y0 = self._receptor
@@ -93,24 +96,28 @@ class GUI:
 		def start():
 			self._t = np.arange(0, self._period, self._interval	/ 1000)
 			self._distance = [d(t) for t in self._t]
-			self._distance_line.set_data(self._t, self._distance)
+			self._distance_line.set_data([], [])
 			self._ax2.set_ylim([np.min(self._distance), np.max(self._distance)])
 
+			self._initial_pos_phase = self._phase
+			self._initial_pos_line.set_data(*self._source(self._phase))
 			reception_t, wave = self._calculate(self._receptor, self._phase)
 			self._wave_line.set_data(reception_t, wave)
 			self._ax3.set_xlim([np.min(reception_t), np.max(reception_t)])
+			self._receptor_line.set_data(*self._receptor)
 
 			self._fig.canvas.draw()
 			resume()
 			
-
 		def update_lines(i):
 			self._time = (datetime.now() - self._t0_datetime).total_seconds()
 			
-			# self._distance_line.set_data(self._t, self._distance)
-
 			self._source_line.set_data(*self._source(self._phase + self._time))
-			return [self._source_line, self._receptor_line]
+
+			idx = int(((self._phase + self._time - self._initial_pos_phase) % self._period) * 1000 / self._interval)
+			self._distance_line.set_data(self._t[:idx], self._distance[:idx])
+
+			return [self._source_line, self._receptor_line, self._distance_line, self._initial_pos_line, self._next_receptor_line]
 
 
 		self._anim = 	FuncAnimation(self._fig, update_lines, interval=self._interval, blit = True)
@@ -125,10 +132,11 @@ class GUI:
 		def onclick(event):
 			if event.button == 1:
 				if event.inaxes == self._ax1:
-					pause()
+					if self._playing:
+						pause()
 
 					self._receptor = (event.xdata, event.ydata)
-					self._receptor_line.set_data(*self._receptor)
+					self._next_receptor_line.set_data(*self._receptor)
 					
 					self._mouse_scrolling = False
 					self._source_line.set(alpha=1)
