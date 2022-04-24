@@ -67,7 +67,7 @@ class GUI:
 		self._ax3.set_ylabel('amplitude (relative units)')
 		self._ax3.set_ylim([-1, 1])
 
-		self._wave_line, = self._ax3.plot([], [], c='#564256', lw=1)
+		self._wave_line, = self._ax3.plot([], [], c='#564256', linewidth=0.5)
 
 		self._interval = 20 # in ms
 		self._time = 0

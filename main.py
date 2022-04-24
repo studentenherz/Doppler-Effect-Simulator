@@ -20,7 +20,7 @@ def main():
 	parser.add_argument('-o', '--output', action='store', dest='fout', type=str, default='doppler.wav', help='Output file')
 	parser.add_argument('-i', '--interactive', action='store_true', dest='interactive', default=False, help='Interactive mode')
 
-	parser.add_argument('-V', '--version', action='version', version='%(prog)s version {}'.format(VERSION))
+	parser.add_argument('-V', '--version', action='version', version='Doppler Effect Simulator {}'.format(VERSION))
 
 	args = parser.parse_args()
 
