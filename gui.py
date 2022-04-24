@@ -69,11 +69,12 @@ class GUI:
 
 		interval = 20 # in ms
 		self._time = 0
+		self._phase = 0
 
 		def update_lines(i):
 			self._time += interval / 1000
 			x0, y0 = self._receptor
-			x1, y1 = self._source(self._time)
+			x1, y1 = self._source(self._phase + self._time)
 
 			self._t.append(self._time)
 			self._distance.append(np.sqrt((x1 - x0)**2 + (y1 - y0)**2))
@@ -85,13 +86,38 @@ class GUI:
 				self._ax2.set_xlim([self._t[0], self._t[-1]])
 
 			self._ax2.relim()
-			self._ax2.autoscale_view(scalex=False)
+			self._ax2.autoscale_view()
 
-			self._source_line.set_data(*self._source(self._time))
+			self._source_line.set_data(*self._source(self._phase + self._time))
+
 			return [self._source_line, self._receptor_line, self._distance_line]
 
 		self._anim = 	FuncAnimation(self._fig, update_lines, interval=interval, blit = True)
 		self._playing = True
+
+		def toggle():
+			if self._playing:
+				self._anim.pause()
+				self._playing = False
+			else:
+				self._anim.resume()
+				self._playing = True
+				self._mouse_scrolling = False
+				self._source_line.set(alpha=1)
+
+		def start():
+			# self._t = []
+			# self._distance = []
+			self._reception_t, self._wave = self._calculate(self._receptor)
+			self._distance_line.set_data(self._t, self._distance)
+			self._wave_line.set_data(self._reception_t, self._wave)
+			self._ax2.relim()
+			self._ax2.autoscale_view()
+			plt.draw()
+			self._anim.resume()
+			self._playing = True
+			self._mouse_scrolling = False
+			self._source_line.set(alpha=1)
 
 		def onclick(event):
 			if event.button == 1:
@@ -100,7 +126,17 @@ class GUI:
 
 				self._receptor = (event.xdata, event.ydata)
 				self._receptor_line.set_data(*self._receptor)
+				
+				self._mouse_scrolling = False
+				self._source_line.set(alpha=1)
 				plt.draw()
+
+				if event.dblclick:
+					start()
+			elif event.button == 2:
+				start()
+			elif event.button == 3:
+				toggle()
 
 		self._mouse_scrolling = False
 		def onscroll(event):
@@ -113,37 +149,20 @@ class GUI:
 			self._playing = False
 
 			self._fig.canvas.restore_region(self._cached_bg)
-			self._time += event.step * interval / 1000
+			self._phase += event.step * interval / 1000
 
-			self._source_line.set_data(*self._source(self._time))
+			self._source_line.set_data(*self._source(self._phase + self._time))
 			self._ax1.draw_artist(self._source_line)
 			self._fig.canvas.blit(self._fig.bbox)
 			self._fig.canvas.flush_events()
 
-
 		def onkeypress(event):
 			# Toggle play/pause with spacebar
 			if event.key == ' ':
-				if self._playing:
-					self._anim.pause()
-					self._playing = False
-				else:
-					self._anim.resume()
-					self._playing = True
-					self._mouse_scrolling = False
-					self._source_line.set(alpha=1)
+				toggle()
 			# Hit Enter to play the sound from current position
 			if event.key == 'enter':
-				self._reception_t, self._wave = self._calculate(self._receptor)
-				self._distance_line.set_data(self._t, self._distance)
-				self._wave_line.set_data(self._reception_t, self._wave)
-				self._ax2.relim()
-				self._ax2.autoscale_view()
-				plt.draw()
-				self._anim.resume()
-				self._playing = True
-				self._mouse_scrolling = False
-				self._source_line.set(alpha=1)
+				start()
 		
 		
 		self._fig.canvas.mpl_connect('button_press_event', onclick)
